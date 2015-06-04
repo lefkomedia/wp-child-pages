@@ -3,6 +3,8 @@ A WordPress plugin that adds a widget for showing child and sibling pages of cur
 
 This plugin is can be updated from the WordPress admin dashboard (see: https://github.com/radishconcepts/WordPress-GitHub-Plugin-Updater).
 
+~Current Version:1.1.2~
+
 ## Credits
 Developed and maintained by Lefko Media, http://lefkomedia.com.
 
