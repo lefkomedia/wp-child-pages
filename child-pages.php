@@ -3,8 +3,8 @@
 Adds Child_Pages_Widget widget.
 Plugin Name:  WP Child Pages
 Plugin URI: http://lefkomedia.com
-Description: Lists out the child pages.
-Version: 1.1.1
+Description: Adds a widget for showing child and sibling pages of current page.
+Version: 1.1.2
 Author: Lefko Media
 Author URI: https://github.com/lefkomedia/wp-child-pages
 */
