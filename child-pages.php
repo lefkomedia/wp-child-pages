@@ -9,6 +9,29 @@ Author: Lefko Media
 Author URI: https://github.com/lefkomedia/wp-child-pages
 */
 
+
+add_action( 'init', 'github_plugin_updater_test_init' );
+function github_plugin_updater_test_init() {
+	include_once 'updater.php';
+	define( 'WP_GITHUB_FORCE_UPDATE', true );
+	if (is_admin()) { // note the use of is_admin() to double check that this is happening in the admin
+		$config = array(
+			'slug' => plugin_basename(__FILE__), // this is the slug of your plugin
+			'proper_folder_name' => 'wp-child-pages', // this is the name of the folder your plugin lives in
+			'api_url' => 'https://api.github.com/repos/lefkomedia/wp-child-pages', // the github API url of your github repo
+			'raw_url' => 'https://raw.github.com/lefkomedia/wp-child-pages/master', // the github raw url of your github repo
+			'github_url' => 'https://github.com/lefkomedia/wp-child-pages', // the github url of your github repo
+			'zip_url' => 'https://github.com/lefkomedia/wp-child-pages/zipball/master', // the zip url of the github repo
+			'sslverify' => true, // wether WP should check the validity of the SSL cert when getting an update, see https://github.com/jkudish/WordPress-GitHub-Plugin-Updater/issues/2 and https://github.com/jkudish/WordPress-GitHub-Plugin-Updater/issues/4 for details
+			'requires' => '3.0', // which version of WordPress does your plugin require?
+			'tested' => '4.2.2', // which version of WordPress is your plugin tested up to?
+			'readme' => 'README.md', // which file to use as the readme for the version number
+			'access_token' => '', // Access private repositories by authorizing under Appearance > Github Updates when this example plugin is installed
+		);
+		new WP_GitHub_Updater($config);
+	}
+}
+
 class Child_Pages_Widget extends WP_Widget {
 
 	/**
@@ -17,8 +40,8 @@ class Child_Pages_Widget extends WP_Widget {
 	function __construct() {
 		parent::__construct(
 			'child_pages_widget', // Base ID
-			__('Child Pages', 'text_domain'), // Name
-			array( 'description' => __( 'Lists child pages.', 'text_domain' ), ) // Args
+			__('WP Child Pages', 'text_domain'), // Name
+			array( 'description' => __( 'Showing child and sibling pages.', 'text_domain' ), ) // Args
 		);
 	}
 
@@ -34,6 +57,7 @@ class Child_Pages_Widget extends WP_Widget {
 		//$title = apply_filters( 'widget_title', $instance['title'] );
 		$sort = $instance['sort'];
 		$sort_order = $instance['sort_order'];
+		$ul_classes = $instance['ul_classes'];
 
 		global $post;
 		$title =  empty( $post->post_parent ) ? get_the_title( $post->ID ) : get_the_title( $post->post_parent );
@@ -48,7 +72,7 @@ class Child_Pages_Widget extends WP_Widget {
 				echo $args['before_title'] . $title . $args['after_title'];
 					
 			if ( $childpages )
-				$string = '<ul>' . $childpages . '</ul>';
+				$string = '<ul' . ( $ul_classes != '' ? ' class="' . $ul_classes . '"' : '' ) . '>' . $childpages . '</ul>';
 					
 			echo $string;
 				
@@ -64,20 +88,18 @@ class Child_Pages_Widget extends WP_Widget {
 	 * @param array $instance Previously saved values from database.
 	 */
 	public function form( $instance ) {
-		if ( isset( $instance[ 'title' ] ) ) {
-			$title = $instance[ 'title' ];
-			$sort = $instance[ 'sort' ];
-			$sort_order = $instance[ 'sort_order' ];
-		}
-		else {
-			$title = __( 'Topics', 'text_domain' );
-			$sort = __( 'post_title', 'text_domain' );
-			$sort_order = __( 'ASC', 'text_domain' );
-		}
+        $title = isset($instance['title']) ? $instance['title'] : __( 'Topics', 'text_domain' );
+        $ul_classes = isset($instance['ul_classes']) ? $instance['ul_classes'] : null;
+        $sort = isset($instance['sort']) ? $instance['sort'] : __( 'post_title', 'text_domain' );
+        $sort_order = isset($instance['sort_order']) ? $instance['sort_order'] : __( 'ASC', 'text_domain' );
 		?>
 		<p>
 		<label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Title:' ); ?></label> 
 		<input class="widefat" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>">
+		</p>
+		<p>
+		<label for="<?php echo $this->get_field_id( 'ul_classes' ); ?>"><?php _e( 'UL Classes:' ); ?></label> 
+		<input class="widefat" id="<?php echo $this->get_field_id( 'ul_classes' ); ?>" name="<?php echo $this->get_field_name( 'ul_classes' ); ?>" type="text" value="<?php echo esc_attr( $ul_classes ); ?>">
 		</p>
 		<p>
 		<label for="<?php echo $this->get_field_id( 'sort' ); ?>"><?php _e( 'Sort By:' ); ?></label> 
@@ -108,6 +130,7 @@ class Child_Pages_Widget extends WP_Widget {
 	public function update( $new_instance, $old_instance ) {
 		$instance = array();
 		$instance['title'] = ( ! empty( $new_instance['title'] ) ) ? strip_tags( $new_instance['title'] ) : '';
+		$instance['ul_classes'] = ( ! empty( $new_instance['ul_classes'] ) ) ? strip_tags( $new_instance['ul_classes'] ) : '';
 		$instance['sort'] = ( ! empty( $new_instance['sort'] ) ) ? strip_tags( $new_instance['sort'] ) : 'name';
 		$instance['sort_order'] = ( ! empty( $new_instance['sort_order'] ) ) ? strip_tags( $new_instance['sort_order'] ) : 'ASC';
 
@@ -121,26 +144,3 @@ function register_child_pages_widget() {
     register_widget( 'Child_Pages_Widget' );
 }
 add_action( 'widgets_init', 'register_child_pages_widget' );
-
-
-add_action( 'init', 'github_plugin_updater_test_init' );
-function github_plugin_updater_test_init() {
-	include_once 'updater.php';
-	define( 'WP_GITHUB_FORCE_UPDATE', true );
-	if (is_admin()) { // note the use of is_admin() to double check that this is happening in the admin
-		$config = array(
-			'slug' => plugin_basename(__FILE__), // this is the slug of your plugin
-			'proper_folder_name' => 'wp-child-pages', // this is the name of the folder your plugin lives in
-			'api_url' => 'https://api.github.com/repos/lefkomedia/wp-child-pages', // the github API url of your github repo
-			'raw_url' => 'https://raw.github.com/lefkomedia/wp-child-pages/master', // the github raw url of your github repo
-			'github_url' => 'https://github.com/lefkomedia/wp-child-pages', // the github url of your github repo
-			'zip_url' => 'https://github.com/lefkomedia/wp-child-pages/zipball/master', // the zip url of the github repo
-			'sslverify' => true, // wether WP should check the validity of the SSL cert when getting an update, see https://github.com/jkudish/WordPress-GitHub-Plugin-Updater/issues/2 and https://github.com/jkudish/WordPress-GitHub-Plugin-Updater/issues/4 for details
-			'requires' => '3.0', // which version of WordPress does your plugin require?
-			'tested' => '4.2.2', // which version of WordPress is your plugin tested up to?
-			'readme' => 'README.md', // which file to use as the readme for the version number
-			'access_token' => '', // Access private repositories by authorizing under Appearance > Github Updates when this example plugin is installed
-		);
-		new WP_GitHub_Updater($config);
-	}
-}
